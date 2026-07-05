@@ -1,0 +1,3 @@
+subscription_id   = "your-azure-subscription-id"
+pg_admin_password = "your-strong-password"
+my_ip             = "your.public.ipv4.address"
