@@ -19,7 +19,7 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 | Docker Compose: Kafka + Kafka Connect + Debezium | ✅ |
 | Load generator (simulated OLTP writes) | ⬜ |
 | Validate CDC flowing (Postgres → Kafka topics) | ✅ |
-| Automate VM provisioning via cloud-init (tech debt) | ⬜ |
+| Automate VM provisioning via cloud-init (tech debt) | ✅ |
 
 ## v2 — Databricks ingestion (bronze)
 
