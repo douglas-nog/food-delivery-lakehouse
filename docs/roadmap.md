@@ -14,11 +14,11 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 | Postgres CDC params (wal_level, slots, senders, workers) | ✅ |
 | Domain schema: 5 tables + REPLICA IDENTITY FULL | ✅ |
 | CDC replication user + publication | ✅ |
-| Terraform: VM (Kafka + Debezium host) | ⬜ |
-| Dedicated SSH key for VM | ⬜ |
-| Docker Compose: Kafka + Kafka Connect + Debezium (manual first) | ⬜ |
+| Terraform: VM (Kafka + Debezium host) | ✅ |
+| Dedicated SSH key for VM | ✅ |
+| Docker Compose: Kafka + Kafka Connect + Debezium | ✅ |
 | Load generator (simulated OLTP writes) | ⬜ |
-| Validate CDC flowing (Postgres → Kafka topics) | ⬜ |
+| Validate CDC flowing (Postgres → Kafka topics) | ✅ |
 | Automate VM provisioning via cloud-init (tech debt) | ⬜ |
 
 ## v2 — Databricks ingestion (bronze)

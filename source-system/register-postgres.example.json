@@ -1,0 +1,18 @@
+{
+    "name": "delivery-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "YOUR_POSTGRES_FQDN",
+        "database.port": "5432",
+        "database.user": "cdc_user",
+        "database.password": "YOUR_CDC_USER_PASSWORD",
+        "database.dbname": "delivery",
+        "database.sslmode": "require",
+        "topic.prefix": "delivery",
+        "plugin.name": "pgoutput",
+        "publication.name": "delivery_pub",
+        "slot.name": "delivery_slot",
+        "table.include.list": "public.customers,public.restaurants,public.products,public.orders,public.order_items"
+    }
+}
