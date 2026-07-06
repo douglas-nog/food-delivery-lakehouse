@@ -32,3 +32,8 @@ variable "pg_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "my_ip" {
+  description = "Developer public IPv4 for administrative access (injected at apply time, never committed)"
+  type        = string
+}

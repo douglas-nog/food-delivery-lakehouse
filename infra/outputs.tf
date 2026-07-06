@@ -13,3 +13,7 @@ output "postgres_fqdn" {
 output "postgres_admin_login" {
   value = azurerm_postgresql_flexible_server.main.administrator_login
 }
+
+output "vm_public_ip" {
+  value = azurerm_public_ip.vm.ip_address
+}
