@@ -51,11 +51,6 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure" {
   end_ip_address   = "0.0.0.0"
 }
 
-variable "my_ip" {
-  description = "Developer public IPv4 for administrative access"
-  type        = string
-}
-
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_my_ip" {
   name             = "allow-my-ip"
   server_id        = azurerm_postgresql_flexible_server.main.id
