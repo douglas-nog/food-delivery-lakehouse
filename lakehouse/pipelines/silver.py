@@ -12,7 +12,7 @@ customers_after_schema = StructType([
     StructField("updated_at", StringType()),
 ])
 
-customer_envelope_schema = StructType([
+customers_envelope_schema = StructType([
     StructField("payload", StructType([
         StructField("after", customers_after_schema),
         StructField("before", customers_after_schema),
@@ -24,11 +24,11 @@ customer_envelope_schema = StructType([
 ])
 
 
-@dp.view(name="customer_parsed")
-def customer_parsed():
+@dp.view(name="customers_parsed")
+def customers_parsed():
     return (
-        spark.readStream.table("customer_raw")
-        .select(F.from_json(F.col("value").cast("string"), customer_envelope_schema).alias("e"))
+        spark.readStream.table("customers_raw")
+        .select(F.from_json(F.col("value").cast("string"), customers_envelope_schema).alias("e"))
         .select(
             F.col("e.payload.op").alias("op"),
             F.col("e.payload.source.lsn").alias("lsn"),
@@ -42,3 +42,16 @@ def customer_parsed():
             F.col("e.payload.after.updated_at").alias("updated_at"),
         )
     )
+
+
+dp.create_streaming_table("customers_silver")
+
+dp.create_auto_cdc_flow(
+    target="customers_silver",
+    source="customers_parsed",
+    keys=["customer_id"],
+    sequence_by=F.col("lsn"),
+    apply_as_deletes=F.expr("op = 'd'"),
+    except_column_list=["op", "lsn"],
+    stored_as_scd_type=1,
+)
