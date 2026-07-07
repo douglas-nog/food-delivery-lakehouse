@@ -25,9 +25,9 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 
 | Item | Status |
 |---|---|
-| Databricks reads Kafka via Structured Streaming | ⬜ |
-| Bronze: raw CDC change events (streaming tables) | ⬜ |
-| Lakeflow Declarative Pipeline scaffold | ⬜ |
+| Databricks reads Kafka via Structured Streaming | ✅ |
+| Bronze: raw CDC change events (streaming tables) | ✅ |
+| Lakeflow Declarative Pipeline scaffold | ✅ |
 
 ## v3 — Transform (silver + gold)
 
