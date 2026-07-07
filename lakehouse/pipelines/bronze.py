@@ -1,6 +1,6 @@
 from pyspark import pipelines as dp
 
-KAFKA_BOOTSTRAP = "20.226.53.51:9092"
+KAFKA_BOOTSTRAP = spark.conf.get("kafka.bootstrap")
 
 
 @dp.table(
