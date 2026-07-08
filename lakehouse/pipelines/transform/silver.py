@@ -1,14 +1,7 @@
-from shared import schemas
-from pyspark.sql import functions as F
 from pyspark import pipelines as dp
-import sys
-import os
+from pyspark.sql import functions as F
 
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), "..", ".."))
-)
-
+from shared import schemas
 
 # Entity config: (name, after_schema, key, scd_type)
 ENTITIES = [
