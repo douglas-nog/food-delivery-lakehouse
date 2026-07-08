@@ -3,8 +3,11 @@ from pyspark.sql import functions as F
 from pyspark import pipelines as dp
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "..")))
+
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), "..", ".."))
+)
 
 
 # Entity config: (name, after_schema, key, scd_type)
