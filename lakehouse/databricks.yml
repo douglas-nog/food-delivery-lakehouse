@@ -1,0 +1,16 @@
+bundle:
+  name: food-delivery-lakehouse
+
+variables:
+  kafka_bootstrap:
+    description: Kafka bootstrap servers (VM public IP:port)
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-7405613325482314.14.azuredatabricks.net
