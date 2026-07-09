@@ -1,7 +1,7 @@
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
-from shared import schemas
+from food_delivery_shared import schemas
 
 # Entity config: (name, after_schema, key, scd_type)
 ENTITIES = [
