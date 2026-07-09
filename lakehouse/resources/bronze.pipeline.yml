@@ -1,0 +1,12 @@
+resources:
+  pipelines:
+    bronze:
+      name: food-delivery-bronze
+      catalog: food_delivery
+      schema: bronze
+      serverless: true
+      libraries:
+        - file:
+            path: ../pipelines/bronze/ingestion.py
+      configuration:
+        kafka.bootstrap: ${var.kafka_bootstrap}
