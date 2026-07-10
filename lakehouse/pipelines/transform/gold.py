@@ -108,3 +108,61 @@ def top_products():
                   ).alias("total_revenue"),
         )
     )
+
+# ---------------------------------------------------------------------------
+# order_enriched: denormalized serving view for operational apps.
+#
+# Unlike the aggregate MVs above, this is a STREAMING TABLE (not a
+# materialized view). A streaming table supports standard CDF, which lets the
+# Lakebase synced table run in TRIGGERED (incremental) mode without the
+# Auto-CDF private preview that materialized-view sources require.
+#
+# Pattern: stream-static join. orders is read as a stream; customers and
+# restaurants are read as static snapshots (dimensions). This avoids the
+# watermark/state requirements of a stream-stream join.
+#
+# One row per order_id, joining order + customer + restaurant context, so an
+# operational app (order tracking, support desk) can look up everything about
+# an order by key in Lakebase with no runtime joins.
+# ---------------------------------------------------------------------------
+
+
+@dp.table(
+    name="food_delivery.gold.order_enriched",
+    comment="Denormalized order view (order + customer + restaurant) for low-latency serving",
+    table_properties=CDF,
+    cluster_by=["order_id"],
+)
+def order_enriched():
+    orders = spark.readStream.table("food_delivery.silver.orders")
+    # customers is SCD Type 1 (no __END_AT), read directly.
+    customers = spark.read.table("food_delivery.silver.customers")
+    # restaurants is SCD Type 2, take current version only.
+    restaurants = _current("restaurants")
+
+    return (
+        orders.alias("o")
+        .join(
+            F.broadcast(customers.alias("c")),
+            F.col("o.customer_id") == F.col("c.customer_id"),
+            "left",
+        )
+        .join(
+            F.broadcast(restaurants.alias("r")),
+            F.col("o.restaurant_id") == F.col("r.restaurant_id"),
+            "left",
+        )
+        .select(
+            F.col("o.order_id"),
+            F.col("o.status"),
+            F.col("o.total_amount"),
+            F.col("o.created_at").alias("ordered_at"),
+            F.col("o.customer_id"),
+            F.col("c.full_name").alias("customer_name"),
+            F.col("c.phone").alias("customer_phone"),
+            F.col("c.city").alias("customer_city"),
+            F.col("o.restaurant_id"),
+            F.col("r.name").alias("restaurant_name"),
+            F.col("r.city").alias("restaurant_city"),
+        )
+    )
