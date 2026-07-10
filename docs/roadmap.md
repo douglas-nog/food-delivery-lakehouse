@@ -48,9 +48,9 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 
 | Item | Status |
 |---|---|
-| Lakebase project (serverless Postgres) | ⬜ |
-| Synced table: gold → Lakebase (reverse ETL, CDF-driven) | ⬜ |
-| Validate low-latency serving from Lakebase | ⬜ |
+| Lakebase project (serverless Postgres) | ✅ |
+| Synced table: gold → Lakebase (reverse ETL, CDF-driven) | ✅ |
+| Validate low-latency serving from Lakebase | 🔶 |
 
 ## v5 — Platform hardening (DABs + CI/CD)
 
