@@ -3,7 +3,9 @@ bundle:
 
 variables:
   kafka_bootstrap:
-    description: Kafka bootstrap servers (VM public IP:port)
+    description: Kafka bootstrap servers (VM public IP)
+  synced_table_pipeline_id:
+    description: Pipeline ID of the Lakebase synced table (created via CLI)
 
 include:
   - resources/*.yml
@@ -12,5 +14,9 @@ targets:
   dev:
     mode: development
     default: true
+    presets:
+      tags:
+        project: food-delivery
+        managed_by: bundle
     workspace:
       host: https://adb-7405613325482314.14.azuredatabricks.net
