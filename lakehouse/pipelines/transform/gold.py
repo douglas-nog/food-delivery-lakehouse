@@ -112,32 +112,27 @@ def top_products():
 # ---------------------------------------------------------------------------
 # order_enriched: denormalized serving view for operational apps.
 #
-# Unlike the aggregate MVs above, this is a STREAMING TABLE (not a
-# materialized view). A streaming table supports standard CDF, which lets the
-# Lakebase synced table run in TRIGGERED (incremental) mode without the
-# Auto-CDF private preview that materialized-view sources require.
+# Built with AUTO CDC, not as a plain streaming read of silver.orders. The
+# silver tables are produced by AUTO CDC themselves, so they receive MERGEs and
+# are NOT append-only, which a streaming source requires. The change feed
+# (orders_valid) IS append-only, so it drives this table instead.
 #
-# Pattern: stream-static join. orders is read as a stream; customers and
-# restaurants are read as static snapshots (dimensions). This avoids the
-# watermark/state requirements of a stream-stream join.
+# The result is a streaming table (standard CDF, so Lakebase can sync it
+# incrementally in TRIGGERED mode) holding one current row per order, joined
+# with customer and restaurant context. An operational app (order tracking,
+# support desk) looks it up by order_id with no runtime joins.
 #
-# One row per order_id, joining order + customer + restaurant context, so an
-# operational app (order tracking, support desk) can look up everything about
-# an order by key in Lakebase with no runtime joins.
+# SCD Type 1: serving wants the current state of an order, not its history
+# (the history lives in silver.orders).
 # ---------------------------------------------------------------------------
 
 
-@dp.table(
-    name="food_delivery.gold.order_enriched",
-    comment="Denormalized order view (order + customer + restaurant) for low-latency serving",
-    table_properties=CDF,
-    cluster_by=["order_id"],
-)
-def order_enriched():
-    orders = spark.readStream.table("food_delivery.silver.orders")
-    # customers is SCD Type 1 (no __END_AT), read directly.
+@dp.view(name="order_enriched_feed")
+def order_enriched_feed():
+    # Append-only change feed of valid orders (defined in silver.py).
+    orders = spark.readStream.table("orders_valid")
+    # Dimensions are read as static snapshots (stream-static join).
     customers = spark.read.table("food_delivery.silver.customers")
-    # restaurants is SCD Type 2, take current version only.
     restaurants = _current("restaurants")
 
     return (
@@ -153,6 +148,8 @@ def order_enriched():
             "left",
         )
         .select(
+            F.col("o.op"),
+            F.col("o.lsn"),
             F.col("o.order_id"),
             F.col("o.status"),
             F.col("o.total_amount"),
@@ -166,3 +163,21 @@ def order_enriched():
             F.col("r.city").alias("restaurant_city"),
         )
     )
+
+
+dp.create_streaming_table(
+    name="food_delivery.gold.order_enriched",
+    comment="Denormalized current-state order view for low-latency serving",
+    table_properties=CDF,
+    cluster_by=["order_id"],
+)
+
+dp.create_auto_cdc_flow(
+    target="food_delivery.gold.order_enriched",
+    source="order_enriched_feed",
+    keys=["order_id"],
+    sequence_by=F.col("lsn"),
+    apply_as_deletes=F.expr("op = 'd'"),
+    except_column_list=["op", "lsn"],
+    stored_as_scd_type=1,
+)
