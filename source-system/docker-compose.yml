@@ -20,6 +20,18 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
+  load-generator:
+    build: ./load-generator
+    container_name: load-generator
+    restart: unless-stopped
+    environment:
+      PG_HOST: ${PG_HOST}
+      PG_DB: delivery
+      PG_USER: ${PG_ADMIN_USER}
+      PG_PASSWORD: ${PG_ADMIN_PASSWORD}
+      INTERVAL_SECONDS: 10
+      ANOMALY_RATE: 0.05
+
   connect:
     image: quay.io/debezium/connect:2.7
     hostname: connect

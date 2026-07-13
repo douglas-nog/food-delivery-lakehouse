@@ -37,19 +37,30 @@ ENTITIES = [
 
 
 def _parse_expr(name, envelope, key, data_cols):
-    """Shared parsing logic: Debezium envelope -> flat change records."""
+    """Shared parsing logic: Debezium envelope -> flat change records.
+
+    Debezium emits NUMERIC columns as exact decimal strings
+    (decimal.handling.mode=string), so they are cast back to DECIMAL here.
+    Casting to decimal (not double) preserves exact precision for money.
+    """
     parsed = (
         spark.readStream.table(f"food_delivery.bronze.{name}_raw")
         .select(F.from_json(F.col("value").cast("string"), envelope).alias("e"))
     )
+
+    def _col(c):
+        expr = F.col(f"e.payload.after.{c}")
+        if c in schemas.DECIMAL_COLS:
+            expr = expr.cast(schemas.DECIMAL_PRECISION)
+        return expr.alias(c)
+
     cols = [
         F.col("e.payload.op").alias("op"),
         F.col("e.payload.source.lsn").alias("lsn"),
         F.coalesce(F.col(f"e.payload.after.{key}"),
                    F.col(f"e.payload.before.{key}")).alias(key),
     ]
-    cols += [F.col(f"e.payload.after.{c}").alias(c)
-             for c in data_cols if c != key]
+    cols += [_col(c) for c in data_cols if c != key]
     return parsed.select(*cols)
 
 

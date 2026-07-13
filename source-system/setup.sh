@@ -28,13 +28,19 @@ echo ">> Setting up CDC user and publication..."
 PGPASSWORD="${PG_ADMIN_PASSWORD}" psql "${PG_CONN}" \
   -v cdc_password="${CDC_USER_PASSWORD}" -f cdc-setup.sql
 
-echo ">> Copying docker-compose to VM..."
+echo ">> Copying docker-compose and load generator to VM..."
 scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new \
   docker-compose.yml azureuser@"${VM_IP}":~/
+scp -i "${SSH_KEY}" -r -o StrictHostKeyChecking=accept-new \
+  load-generator azureuser@"${VM_IP}":~/
 
-echo ">> Starting Kafka + Connect on VM..."
+echo ">> Starting Kafka + Connect + load generator on VM..."
 ssh -i "${SSH_KEY}" azureuser@"${VM_IP}" \
-  "VM_PUBLIC_IP=${VM_IP} docker compose up -d"
+  "VM_PUBLIC_IP=${VM_IP} \
+   PG_HOST=${PG_FQDN} \
+   PG_ADMIN_USER=${PG_ADMIN_USER} \
+   PG_ADMIN_PASSWORD='${PG_ADMIN_PASSWORD}' \
+   docker compose up -d --build"
 
 echo ">> Waiting for Kafka Connect REST API..."
 until ssh -i "${SSH_KEY}" azureuser@"${VM_IP}" \
@@ -60,7 +66,8 @@ ssh -i "${SSH_KEY}" azureuser@"${VM_IP}" "cat > register-postgres.json" << JSON
     "plugin.name": "pgoutput",
     "publication.name": "delivery_pub",
     "slot.name": "delivery_slot",
-    "table.include.list": "public.customers,public.restaurants,public.products,public.orders,public.order_items"
+    "table.include.list": "public.customers,public.restaurants,public.products,public.orders,public.order_items",
+    "decimal.handling.mode": "string"
   }
 }
 JSON
