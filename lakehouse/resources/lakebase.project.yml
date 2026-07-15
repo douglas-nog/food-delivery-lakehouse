@@ -1,6 +1,6 @@
 resources:
   postgres_projects:
     food_delivery_serving:
-      project_id: food-delivery-serving
-      display_name: Food Delivery Serving
+      project_id: food-delivery-serving-${var.env}
+      display_name: Food Delivery Serving (${var.env})
       pg_version: 17

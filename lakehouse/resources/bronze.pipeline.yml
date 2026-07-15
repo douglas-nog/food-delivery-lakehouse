@@ -2,7 +2,7 @@ resources:
   pipelines:
     bronze:
       name: food-delivery-bronze
-      catalog: food_delivery
+      catalog: ${var.catalog}
       schema: bronze
       serverless: true
       libraries:
