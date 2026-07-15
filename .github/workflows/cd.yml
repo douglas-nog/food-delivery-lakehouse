@@ -1,0 +1,58 @@
+name: CD
+
+on:
+  push:
+    branches: [develop, homolog, main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target environment to deploy
+        required: true
+        type: choice
+        options: [dev, stg, prod]
+
+jobs:
+  deploy:
+    name: Deploy bundle
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target || (github.ref_name == 'main' && 'prod' || github.ref_name == 'homolog' && 'stg' || 'dev') }}
+    defaults:
+      run:
+        working-directory: lakehouse
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "target=${{ github.event.inputs.target }}" >> "$GITHUB_OUTPUT"
+          else
+            case "${{ github.ref_name }}" in
+              main)    echo "target=prod" >> "$GITHUB_OUTPUT" ;;
+              homolog) echo "target=stg"  >> "$GITHUB_OUTPUT" ;;
+              develop) echo "target=dev"  >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build wheel
+        run: uv build --wheel
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy bundle
+        run: |
+          databricks bundle deploy -t ${{ steps.target.outputs.target }} \
+            --var="kafka_bootstrap=${{ vars.KAFKA_BOOTSTRAP }}" \
+            --var="synced_table_pipeline_id=${{ vars.SYNCED_TABLE_PIPELINE_ID }}"
