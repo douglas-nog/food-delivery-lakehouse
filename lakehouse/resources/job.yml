@@ -1,0 +1,24 @@
+resources:
+  jobs:
+    medallion:
+      name: food-delivery-medallion
+      max_concurrent_runs: 1
+      schedule:
+        quartz_cron_expression: "0 */15 * * * ?"
+        timezone_id: America/Sao_Paulo
+      tasks:
+        - task_key: bronze_ingestion
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bronze.id}
+
+        - task_key: transform
+          depends_on:
+            - task_key: bronze_ingestion
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.transform.id}
+
+        - task_key: sync_serving
+          depends_on:
+            - task_key: transform
+          pipeline_task:
+            pipeline_id: ${var.synced_table_pipeline_id}

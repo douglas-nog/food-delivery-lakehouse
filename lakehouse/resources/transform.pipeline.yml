@@ -1,0 +1,15 @@
+resources:
+  pipelines:
+    transform:
+      name: food-delivery-transform
+      catalog: ${var.catalog}
+      schema: silver
+      serverless: true
+      libraries:
+        - file:
+            path: ../pipelines/transform/silver.py
+        - file:
+            path: ../pipelines/transform/gold.py
+      environment:
+        dependencies:
+          - ../dist/food_delivery_shared-0.1.0-py3-none-any.whl
