@@ -28,7 +28,6 @@ targets:
       catalog: food_delivery_dev
       env: dev
     presets:
-      name_prefix: "[dev] "
       tags:
         project: food-delivery
         managed_by: bundle
@@ -38,7 +37,7 @@ targets:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/dev
 
   stg:
-    mode: development
+    mode: production
     variables:
       catalog: food_delivery_stg
       env: stg
@@ -58,6 +57,7 @@ targets:
       catalog: food_delivery_prod
       env: prod
     presets:
+      name_prefix: "prod_"
       tags:
         project: food-delivery
         managed_by: bundle
