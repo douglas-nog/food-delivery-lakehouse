@@ -34,13 +34,15 @@ targets:
         environment: dev
     workspace:
       host: https://adb-7405613325482314.14.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/dev
 
   stg:
-    mode: development
+    mode: production
     variables:
       catalog: food_delivery_stg
       env: stg
     presets:
+      name_prefix: "[stg] "
       tags:
         project: food-delivery
         managed_by: bundle
@@ -55,6 +57,7 @@ targets:
       catalog: food_delivery_prod
       env: prod
     presets:
+      name_prefix: "prod_"
       tags:
         project: food-delivery
         managed_by: bundle
