@@ -44,7 +44,7 @@ def _parse_expr(name, envelope, key, data_cols):
     Casting to decimal (not double) preserves exact precision for money.
     """
     parsed = (
-        spark.readStream.table(f"food_delivery.bronze.{name}_raw")
+        spark.readStream.table(f"bronze.{name}_raw")
         .select(F.from_json(F.col("value").cast("string"), envelope).alias("e"))
     )
 

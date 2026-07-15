@@ -15,4 +15,13 @@ packages = ["src/food_delivery_shared"]
 dev = [
     "pyspark==4.0.*",
     "ruff",
+    "pytest",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+# spark, dp (pipelines module) are injected by the Databricks LDP runtime,
+# so they are not imported in the source and ruff cannot resolve them.
+"pipelines/**/*.py" = ["F821"]

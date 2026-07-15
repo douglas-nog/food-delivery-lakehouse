@@ -2,7 +2,7 @@ resources:
   pipelines:
     transform:
       name: food-delivery-transform
-      catalog: food_delivery
+      catalog: ${var.catalog}
       schema: silver
       serverless: true
       libraries:

@@ -28,6 +28,10 @@ echo ">> Setting up CDC user and publication..."
 PGPASSWORD="${PG_ADMIN_PASSWORD}" psql "${PG_CONN}" \
   -v cdc_password="${CDC_USER_PASSWORD}" -f cdc-setup.sql
 
+echo ">> Building shared wheel for the load generator..."
+( cd ../lakehouse && uv build --wheel >/dev/null )
+cp ../lakehouse/dist/food_delivery_shared-*.whl load-generator/
+
 echo ">> Copying docker-compose and load generator to VM..."
 scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new \
   docker-compose.yml azureuser@"${VM_IP}":~/

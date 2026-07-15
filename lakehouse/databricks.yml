@@ -2,10 +2,20 @@ bundle:
   name: food-delivery-lakehouse
 
 variables:
+  catalog:
+    description: Unity Catalog for this environment (food_delivery_<env>)
   kafka_bootstrap:
-    description: Kafka bootstrap servers (VM public IP)
+    description: >-
+      Kafka bootstrap endpoint. Injected at deploy time, never versioned:
+      from Terraform output locally, from GitHub environment variables in CI/CD.
+      In production this would be a stable DNS endpoint per environment.
   synced_table_pipeline_id:
-    description: Pipeline ID of the Lakebase synced table (created via CLI)
+    description: >-
+      Pipeline ID of the Lakebase synced table (created via CLI). Injected at
+      deploy time, never versioned. Stable in production; see RUNBOOK for the
+      redeploy procedure when infrastructure is recreated.
+  env:
+    description: Environment short name (dev/stg/prod), used to suffix per-environment resources
 
 include:
   - resources/*.yml
@@ -14,9 +24,41 @@ targets:
   dev:
     mode: development
     default: true
+    variables:
+      catalog: food_delivery_dev
+      env: dev
     presets:
       tags:
         project: food-delivery
         managed_by: bundle
+        environment: dev
     workspace:
       host: https://adb-7405613325482314.14.azuredatabricks.net
+
+  stg:
+    mode: development
+    variables:
+      catalog: food_delivery_stg
+      env: stg
+    presets:
+      tags:
+        project: food-delivery
+        managed_by: bundle
+        environment: stg
+    workspace:
+      host: https://adb-7405613325482314.14.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/stg
+
+  prod:
+    mode: production
+    variables:
+      catalog: food_delivery_prod
+      env: prod
+    presets:
+      tags:
+        project: food-delivery
+        managed_by: bundle
+        environment: prod
+    workspace:
+      host: https://adb-7405613325482314.14.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/prod

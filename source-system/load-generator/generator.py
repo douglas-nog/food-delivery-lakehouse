@@ -14,6 +14,11 @@ continuous, realistic change stream to process:
   - injects a configurable share of anomalies (ANOMALY_RATE, default 5%) to
     exercise the silver-layer expectations and the orders quarantine
 
+The domain rules (order total, anomaly injection, status lifecycle, price
+adjustment, deactivation guard) live in food_delivery_shared.load_logic as pure
+functions, so they are unit-tested without a database. This module orchestrates
+those rules around the actual SQL.
+
 Anomalies are limited to what the schema actually allows: total_amount has no
 CHECK constraint (so a negative total is possible, mimicking a pricing bug) and
 status is a free VARCHAR (so an unknown status is possible, mimicking a value
@@ -31,6 +36,8 @@ from decimal import Decimal
 import psycopg2
 from psycopg2.extras import execute_values
 
+from food_delivery_shared import load_logic as logic
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -45,17 +52,6 @@ PG_PASSWORD = os.environ["PG_PASSWORD"]
 
 INTERVAL_SECONDS = float(os.environ.get("INTERVAL_SECONDS", "10"))
 ANOMALY_RATE = float(os.environ.get("ANOMALY_RATE", "0.05"))
-
-# Never deactivate below this many restaurants, otherwise order creation starves.
-MIN_ACTIVE_RESTAURANTS = 2
-
-UNKNOWN_STATUSES = ["pending_sync", "unknown", "payment_review"]
-
-STATUS_FLOW = {
-    "created": "confirmed",
-    "confirmed": "preparing",
-    "preparing": "delivered",
-}
 
 # --- Seed data (realistic Brazilian delivery domain) -------------------------
 
@@ -186,18 +182,13 @@ def create_order(conn):
             return
 
         items = [(pid, random.randint(1, 3), price) for pid, price in picked]
-        total = sum(price * qty for _, qty, price in items)
 
+        # Domain rules (pure, unit-tested in load_logic).
+        total = logic.order_total(items)
         status = "created"
-        anomaly = None
-        if random.random() < ANOMALY_RATE:
-            anomaly = random.choice(["negative_total", "unknown_status"])
-            if anomaly == "negative_total":
-                # Mimics a pricing/refund bug upstream -> should be quarantined.
-                total = -total
-            else:
-                # Mimics an unmapped status from an upstream integration -> warn.
-                status = random.choice(UNKNOWN_STATUSES)
+        anomaly = logic.choose_anomaly(random.random(), ANOMALY_RATE)
+        unknown = random.choice(logic.UNKNOWN_STATUSES)
+        total, status = logic.apply_anomaly(total, status, anomaly, unknown)
 
         cur.execute(
             "INSERT INTO orders (customer_id, restaurant_id, status, total_amount) "
@@ -232,8 +223,8 @@ def advance_statuses(conn, batch=3):
         )
         for order_id, status in cur.fetchall():
             # A small share of orders is cancelled instead of progressing.
-            new_status = "cancelled" if random.random(
-            ) < 0.08 else STATUS_FLOW[status]
+            new_status = logic.next_status(
+                status, cancel=random.random() < 0.08)
             cur.execute(
                 "UPDATE orders SET status = %s, updated_at = now() "
                 "WHERE order_id = %s",
@@ -257,8 +248,9 @@ def mutate_dimensions(conn):
                 return
             product_id, price = row
 
-            factor = Decimal(str(round(random.uniform(0.90, 1.10), 2)))
-            new_price = (price * factor).quantize(Decimal("0.01"))
+            new_price = logic.adjusted_price(
+                price, round(random.uniform(0.90, 1.10), 2)
+            )
             cur.execute(
                 "UPDATE products SET price = %s, updated_at = now() "
                 "WHERE product_id = %s",
@@ -284,7 +276,7 @@ def mutate_dimensions(conn):
                 return
             restaurant_id, is_active = row
 
-            if is_active and active <= MIN_ACTIVE_RESTAURANTS:
+            if not logic.can_deactivate(is_active, active, logic.MIN_ACTIVE_RESTAURANTS):
                 log.info(
                     "skipping deactivation (only %d active restaurants)", active)
             else:

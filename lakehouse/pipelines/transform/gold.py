@@ -18,12 +18,12 @@ CDF = {"delta.enableChangeDataFeed": "true"}
 
 def _current(table: str):
     """Current version of an SCD Type 2 silver table."""
-    return spark.read.table(f"food_delivery.silver.{table}").filter("__END_AT IS NULL")
+    return spark.read.table(f"silver.{table}").filter("__END_AT IS NULL")
 
 
 # --- MV 1: daily orders and revenue by restaurant -------------------------
 @dp.materialized_view(
-    name="food_delivery.gold.daily_orders_by_restaurant",
+    name="gold.daily_orders_by_restaurant",
     comment="Daily order count and revenue per restaurant",
     table_properties=CDF,
     cluster_by=["order_date", "restaurant_id"],
@@ -50,7 +50,7 @@ def daily_orders_by_restaurant():
 
 # --- MV 2: revenue by restaurant city -------------------------------------
 @dp.materialized_view(
-    name="food_delivery.gold.revenue_by_city",
+    name="gold.revenue_by_city",
     comment="Total revenue and order count per restaurant city",
     table_properties=CDF,
     cluster_by=["city"],
@@ -75,7 +75,7 @@ def revenue_by_city():
 
 # --- MV 3: top products by quantity sold ----------------------------------
 @dp.materialized_view(
-    name="food_delivery.gold.top_products",
+    name="gold.top_products",
     comment="Products ranked by total quantity sold, with restaurant context",
     table_properties=CDF,
     cluster_by=["restaurant_id"],
@@ -132,7 +132,7 @@ def order_enriched_feed():
     # Append-only change feed of valid orders (defined in silver.py).
     orders = spark.readStream.table("orders_valid")
     # Dimensions are read as static snapshots (stream-static join).
-    customers = spark.read.table("food_delivery.silver.customers")
+    customers = spark.read.table("silver.customers")
     restaurants = _current("restaurants")
 
     return (
@@ -166,14 +166,14 @@ def order_enriched_feed():
 
 
 dp.create_streaming_table(
-    name="food_delivery.gold.order_enriched",
+    name="gold.order_enriched",
     comment="Denormalized current-state order view for low-latency serving",
     table_properties=CDF,
     cluster_by=["order_id"],
 )
 
 dp.create_auto_cdc_flow(
-    target="food_delivery.gold.order_enriched",
+    target="gold.order_enriched",
     source="order_enriched_feed",
     keys=["order_id"],
     sequence_by=F.col("lsn"),

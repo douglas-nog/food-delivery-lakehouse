@@ -30,3 +30,4 @@ __pycache__/
 source-system/.env
 RUNBOOK.txt
 dist/
+source-system/load-generator/*.whl
