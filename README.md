@@ -7,19 +7,7 @@ operational Postgres store.
 
 The domain is a food-delivery platform (customers, restaurants, products,
 orders, order items). Every insert, update, and delete on the source database
-is captured as a change event and flows end to end without batch extracts:
-
-```
-┌──────────────┐   CDC    ┌──────────┐   ┌───────┐   ┌────────────────────────┐   ┌──────────┐
-│  PostgreSQL  │ ───────▶ │ Debezium │──▶│ Kafka │──▶│  Databricks Lakehouse  │──▶│ Lakebase │
-│  (OLTP)      │  logical │ (connect)│   │       │   │  bronze → silver → gold│   │  (OLTP)  │
-└──────────────┘  replic. └──────────┘   └───────┘   └────────────────────────┘   └──────────┘
-      ▲                                                   Lakeflow Declarative        │
-      │                                                   Pipelines (LDP)             │
-      │                                                                               │
-   load generator                                                    reverse ETL (synced table)
-   (simulated traffic)                                               served to apps via Postgres
-```
+is captured as a change event and flows end to end without batch extracts.
 
 The result is a full **OLTP → OLAP → OLTP** cycle: data originates in a
 transactional database, is enriched and modeled analytically in the lakehouse,
@@ -34,6 +22,29 @@ reverse ETL, infrastructure as code, and a CI/CD pipeline with automated tests
 deploying across three environments.
 
 ## Architecture
+
+```mermaid
+flowchart LR
+    subgraph source[Source system]
+        PG[(PostgreSQL<br/>OLTP)]
+        LG[load generator] --> PG
+        PG -->|logical replication| DBZ[Debezium]
+        DBZ --> K[Kafka]
+    end
+
+    subgraph lakehouse[Databricks lakehouse]
+        K -->|Structured Streaming| BR[bronze.*_raw]
+        BR -->|AUTO CDC| SLV[silver.* &#40;SCD 1 &amp; 2&#41;]
+        BR -.->|invalid orders| Q[silver.orders_quarantine]
+        SLV -->|materialized views| GLD[gold.* metrics]
+        SLV -->|change feed → AUTO CDC| OE[gold.order_enriched]
+    end
+
+    subgraph serving[Operational serving]
+        OE -->|synced table &#40;TRIGGERED&#41;| LB[(Lakebase<br/>Postgres)]
+        LB --> APP[apps]
+    end
+```
 
 ### Source system (OLTP + CDC)
 
