@@ -13,14 +13,6 @@ The result is a full **OLTP → OLAP → OLTP** cycle: data originates in a
 transactional database, is enriched and modeled analytically in the lakehouse,
 and is pushed back to a low-latency operational store for application serving.
 
-## Why this project
-
-It is built as a portfolio piece to demonstrate a production-shaped data
-platform end to end: real change data capture (not simulated batch loads),
-declarative pipelines with data quality controls, slowly changing dimensions,
-reverse ETL, infrastructure as code, and a CI/CD pipeline with automated tests
-deploying across three environments.
-
 ## Architecture
 
 ```mermaid
