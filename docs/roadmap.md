@@ -21,7 +21,6 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 | Validate CDC flowing (Postgres → Kafka topics) | ✅ |
 | Automated setup (apply.sh + setup.sh) | ✅ |
 | Load generator (realistic OLTP traffic + anomalies) | ✅ |
-| Automate Kafka via cloud-init (tech debt) | ⬜ |
 
 ## v2 — Databricks ingestion (bronze)
 
@@ -76,9 +75,9 @@ Status: ✅ done · 🔶 partial · ⬜ pending
 | Item | Status |
 |---|---|
 | README with architecture + design decisions | ✅ |
-| ADRs (monorepo, 2-pipeline split, SCD-per-entity, reverse ETL, IaC gap) | ⬜ |
-| Remove tfstate from version control (tech debt) | ⬜ |
-| Workspace cleanup: keep only bundle-deployed assets | 🔶 |
+| ADRs (monorepo, 2-pipeline split, SCD-per-entity, reverse ETL, IaC gap) | ✅ |
+| Remove tfstate from version control (tech debt) | ✅ |
+| Workspace cleanup: keep only bundle-deployed assets | ✅ |
 
 ## Concepts demonstrated (certification-aligned)
 
