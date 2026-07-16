@@ -57,7 +57,7 @@ targets:
       catalog: food_delivery_prod
       env: prod
     presets:
-      name_prefix: "prod_"
+      name_prefix: "[prod]"
       tags:
         project: food-delivery
         managed_by: bundle
