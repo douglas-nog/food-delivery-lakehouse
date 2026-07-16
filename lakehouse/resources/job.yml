@@ -4,7 +4,7 @@ resources:
       name: food-delivery-medallion
       max_concurrent_runs: 1
       schedule:
-        quartz_cron_expression: "0 0 10 * * ?"
+        quartz_cron_expression: "0 0 * * * ?"
         timezone_id: America/Sao_Paulo
       tasks:
         - task_key: bronze_ingestion

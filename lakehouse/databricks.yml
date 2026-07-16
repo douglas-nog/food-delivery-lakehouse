@@ -43,6 +43,7 @@ targets:
       env: stg
     presets:
       name_prefix: "[stg] "
+      trigger_pause_status: PAUSED
       tags:
         project: food-delivery
         managed_by: bundle
@@ -57,7 +58,8 @@ targets:
       catalog: food_delivery_prod
       env: prod
     presets:
-      name_prefix: "[prod]"
+      name_prefix: "[prod] "
+      trigger_pause_status: UNPAUSED
       tags:
         project: food-delivery
         managed_by: bundle
